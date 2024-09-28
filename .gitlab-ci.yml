@@ -1,0 +1,29 @@
+stages:          
+  - image-build
+  - image-push
+  - update
+
+variables:
+  IMAGE_NAME: iam2
+  IMAGE_TAG: latest
+
+image-build:  
+  stage: image-build    
+  tags:
+    - docker-build
+  script:
+    - docker build . -t $IMAGE_NAME:$IMAGE_TAG --no-cache
+
+
+image-push:  
+  stage: image-push    
+  tags:
+    - docker-build
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    # - export IMAGE_TAG_URI="${CI_REGISTRY}/${CI_PROJECT_NAMESPACE}/${CI_PROJECT_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
+    - export IMAGE_TAG_URI="${CI_REGISTRY_IMAGE}:${IMAGE_TAG}"
+    - docker tag $IMAGE_NAME:$IMAGE_TAG $IMAGE_TAG_URI
+    - docker push  $IMAGE_TAG_URI
+    - export SHA=$(docker inspect --format='{{index .RepoDigests 0}}' $IMAGE_TAG_URI | awk -F'@' '{ print $2 }')
+    - echo $SHA
